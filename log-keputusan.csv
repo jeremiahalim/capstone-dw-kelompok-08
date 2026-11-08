@@ -1,2 +1,1 @@
-id,tanggal,nim,tahap,seri_kode,keputusan,alternatif_ditolak,alasan,dampak_baris
-K-001,2026-11-03,12345678,silver,var543,"periode bulanan Februari/Agustus disimpan sebagai jenis_periode=bulan","rata-rata ke tahunan","sumber menerbitkan dua kali setahun; agregasi dilakukan di Gold",0
+K-001,2026-11-08,124450101,silver,semua,"wilayah_kode = kode provinsi BPS 2 digit x 100 pada susunan 38 provinsi 2025, Indonesia = 9999, digabung berdasarkan kode bukan nama; provinsi baru dibiarkan apa adanya (hanya berisi tahun sejak berdiri)","pencocokan berdasarkan nama provinsi; penggabungan provinsi baru ke wilayah sebelum pemekaran dengan bobot penduduk","ejaan nama provinsi tidak seragam antarberkas; opsi bobot penduduk memerlukan data penduduk tambahan",0
