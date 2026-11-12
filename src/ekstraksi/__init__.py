@@ -1,14 +1,23 @@
-"""Tahap 1 - Ekstraksi (pertemuan X). Milik tim.
+"""Tahap 1 (Ekstraksi): satukan keluaran semua pembaca menjadi satu tabel mentah ber-lineage."""
+import pandas as pd
 
-Baca setiap berkas di data/raw/ (CSV, JSON WebAPI BPS, XLSX BNPB, SDMX ILO, JSON WDI) menjadi
-DataFrame mentah yang setia pada sumbernya: jangan membersihkan di sini, cukup ratakan struktur
-dan catat asal tiap baris (`_berkas_raw` relatif data/raw/, `_sha256_raw` dari src.common.manifest).
-"""
-from . import bps
+from src.common.manifest import RAW, baca
+from src.ekstraksi import bps, wdi
+
+# Berkas pendamping unduhan (bukan data); ada di MANIFEST tapi tidak dibaca.
+BUKAN_DATA = ("manifest_asal.json",)
 
 
-def jalankan():
-    """Kembalikan {nama_sumber: DataFrame mentah}."""
-    hasil = {"bps": bps.baca_semua()}
-    # TODO (kartu pembaca WDI): hasil["wdi"] = wdi.baca_semua()
-    return hasil
+def jalankan(raw=RAW):
+    mentah = pd.concat(
+        [bps.baca_semua().assign(_sumber="bps"),
+         wdi.baca_wdi(raw).assign(_sumber="wdi")],
+        ignore_index=True,
+    )
+    terbaca = set(mentah["_berkas_raw"].unique())
+    terlewat = sorted(b for b in baca(raw)
+                      if b not in terbaca and not b.endswith(BUKAN_DATA))
+    if terlewat:
+        raise RuntimeError(f"Berkas di MANIFEST.csv belum terbaca: {terlewat}")
+    print(f"ekstraksi: {len(terbaca)} berkas dibaca, {len(mentah)} baris mentah")
+    return mentah
