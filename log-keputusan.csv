@@ -7,3 +7,5 @@ K-005,2026-11-18,124450075,transformasi,"var2595,var2600,var304,var1980,var2211,
 K-006,2026-11-18,124450075,transformasi,"SE.ENR.PRSC.FM.ZS,SE.PRM.CMPT.ZS","kode SDG WDI kosong diisi 4.5.1 dan 4.1.2","membiarkan kosong","tercantum di metadata/sumber46_indikator.json",2
 K-007,2026-11-18,124450075,ekstraksi,var2211,"var.note APS (definisi ketimpangan disabilitas) tidak dipakai; definisi diambil dari judul","menyalin var.note ke data dictionary","isi catatan tidak cocok dengan judul dan turvar (kelompok umur)",0
 K-008,2026-11-18,124450075,pembersihan,var2211,"APS tetap di Silver tanpa kode SDG; dipakai sebagai konteks partisipasi menurut umur","membuang APS","tidak ada larangan; bermanfaat sebagai penjelas APM",0
+K-009,2026-11-18,124450075,transformasi,"var304,var1980,var2211","turvar menjadi rincian jenjang=sd/smp/sm/sma dan umur=7-12/13-15/16-18/19-23; tidak ada total buatan","label asli; menjumlahkan jenjang","kode pendek; angka partisipasi per jenjang tidak bisa dijumlah",9
+K-010,2026-11-18,124450075,silver,"SE.ENR.PRSC.FM.ZS,SE.PRM.CMPT.ZS","baris WDI dengan value null tidak masuk Silver","menyimpan NaN","null berarti tidak ada estimasi",43
