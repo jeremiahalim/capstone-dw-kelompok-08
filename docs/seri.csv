@@ -1,0 +1,8 @@
+sumber,seri_kode,nama_seri,satuan,jenis_periode,kode_sdg,sumber_metadata
+bps,var2595,4.5.1* Rasio Angka Partisipasi Kasar (APK) pada jenjang SMA/sederajat untuk kuintil terendah/kuintil tertinggi menurut provinsi,rasio_x100,tahunan,4.5.1,BPS JSON (sdg4_4_5_1_v2595.json)
+bps,var2600,4.5.1* Rasio Angka Partisipasi Kasar (APK) pada jenjang PT/sederajat untuk perempuan/laki-laki menurut provinsi,rasio_x100,tahunan,4.5.1,BPS JSON (sdg4_4_5_1_v2600.json)
+bps,var304,Angka Partisipasi Murni (APM) Menurut Provinsi dan Jenjang Pendidikan,persen,tahunan,4.1,BPS JSON (sdg4_apm.json)
+bps,var1980,Tingkat Penyelesaian Pendidikan Menurut Jenjang Pendidikan dan Provinsi,persen,tahunan,4.1.2,BPS JSON (sdg4_completion.json)
+bps,var2211,Angka Partisipasi Sekolah (APS) Menurut Provinsi dan Kelompok Umur,persen,tahunan,4.1,BPS JSON (sdg4_aps.json)
+wdi,SE.ENR.PRSC.FM.ZS,"School enrollment, primary and secondary (gross), gender parity index (GPI)",rasio,tahunan,4.5.1,WDI Metadata (sumber2_indikator.json / sumber46_indikator.json)
+wdi,SE.PRM.CMPT.ZS,"Primary completion rate, total (% of relevant age group)",persen_apk,tahunan,4.1.2,WDI Metadata (sumber2_indikator.json / sumber46_indikator.json)
