@@ -12,14 +12,20 @@ SILVER_OUT_PATH = BASE_DIR / "data" / "silver" / "silver.parquet"
 
 # Peta pembakuan rincian BPS (sesuai K-006)
 PETA_RINCIAN = {
-    "SD/Sederajat": "jenjang=sd",
-    "SMP/Sederajat": "jenjang=smp",
-    "SM/Sederajat": "jenjang=sm",
-    "SMA/Sederajat": "jenjang=sma",
+    "sd/sederajat": "jenjang=sd",
+    "sd / sederajat": "jenjang=sd",
+    "smp/sederajat": "jenjang=smp",
+    "smp / sederajat": "jenjang=smp",
+    "sm/sederajat": "jenjang=sm",
+    "sm / sederajat": "jenjang=sm",
+    "sma/sederajat": "jenjang=sma",
+    "sma / sederajat": "jenjang=sma",
     "7-12": "umur=7-12",
     "13-15": "umur=13-15",
     "16-18": "umur=16-18",
     "19-23": "umur=19-23",
+    "": "total",
+    "tidak ada": "total",
 }
 
 
@@ -70,8 +76,8 @@ def _proses_bps(peta_seri):
         df_bps["turvar"]
         .astype(str)
         .str.strip()
-        .replace(PETA_RINCIAN)
-        .replace({"": "total", "Tidak Ada": "total"})
+        .str.lower()
+        .map(lambda x: PETA_RINCIAN.get(x, x))
     )
 
     # Konversi nilai numerik dan buang observasi yang kosong/missing (sesuai K-005)
@@ -98,7 +104,7 @@ def _proses_wdi(peta_seri):
     df_wdi["wilayah_kode"] = 9999
     df_wdi["nama_wilayah"] = "Indonesia"
     df_wdi["periode"] = df_wdi["date"].astype(str).str.strip()
-    df_wdi["rincian"] = "nasional"
+    df_wdi["rincian"] = "total"
 
     # Buang baris WDI dengan value null (sesuai K-010)
     df_wdi["nilai"] = pd.to_numeric(df_wdi["value"], errors="coerce")
