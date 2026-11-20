@@ -3,8 +3,8 @@
     "baris_silver": 5418,
     "seri_silver": 7,
     "kolom_terdokumentasi": 11,
-    "aturan_validasi": 11,
-    "aturan_lolos": 11
+    "aturan_validasi": 10,
+    "aturan_lolos": 10
   },
   "seed": 0,
   "data_hash": "d737b8d5e46ff6af6aef435d8caa64672ebea188fd9cf93182a874d72a0d9491",
