@@ -4,8 +4,10 @@
     "sel_grid": 5776,
     "sel_kosong_grid": 599,
     "sel_missing": 3,
-    "sel_belum_ada": 527,
-    "sel_batas_lama": 69
+    "outlier_ditandai": 26,
+    "patahan_wilayah": 30,
+    "patahan_definisi": 1,
+    "galat_input": 0
   },
   "seed": 0,
   "data_hash": "d737b8d5e46ff6af6aef435d8caa64672ebea188fd9cf93182a874d72a0d9491",
