@@ -28,7 +28,6 @@ PETA_RINCIAN = {
     "tidak ada": "total",
 }
 
-
 def _muat_peta_seri():
     """Membaca satuan dan jenis_periode dari docs/seri.csv hasil tugas #9."""
     if not DOCS_SERI_PATH.exists():
@@ -73,11 +72,7 @@ def _proses_bps(peta_seri):
 
     # Rincian disimpan ringkas sesuai K-006, atau teks asli jika tidak ada di peta
     df_bps["rincian"] = (
-        df_bps["turvar"]
-        .astype(str)
-        .str.strip()
-        .str.lower()
-        .map(lambda x: PETA_RINCIAN.get(x, x))
+        df_bps["turvar"].astype(str).str.strip().str.lower().map(lambda x: PETA_RINCIAN.get(x, x))
     )
 
     # Konversi nilai numerik dan buang observasi yang kosong/missing (sesuai K-005)
