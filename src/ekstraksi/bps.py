@@ -40,7 +40,7 @@ def _peta_kunci(var_id, vervar, turvar, tahun, periode, dengan_periode):
 
 
 def baca_json(path):
-    """JSON WebAPI BPS (semua halaman) diratakan jadi tabel panjang."""
+    # JSON WebAPI BPS (semua halaman) diratakan jadi tabel panjang.
     with open(path, encoding="utf-8-sig") as f:
         isi = json.load(f)
     halaman = isi if isinstance(isi, list) else [isi]
@@ -50,20 +50,17 @@ def baca_json(path):
             raise ValueError(f"{path.name}: diharapkan satu var, ditemukan {len(blok['var'])}")
         var = blok["var"][0]
         var_id, satuan = var["val"], var.get("unit", "")
-
         vervar = {v["val"]: v["label"] for v in blok["vervar"]}
         turvar = {t["val"]: t["label"] for t in blok["turvar"]}
         tahun = {t["val"]: t["label"] for t in blok["tahun"]}
         periode = {p["val"]: p["label"] for p in blok.get("turtahun", [])} or {0: "Tahun"}
         data = blok.get("datacontent") or {}
-
         for dengan_periode in (True, False):
             peta = _peta_kunci(var_id, vervar, turvar, tahun, periode, dengan_periode)
             if all(k in peta for k in data):
                 break
         else:
             raise ValueError(f"{path.name}: kunci datacontent tidak dikenali, contoh {list(data)[:3]}")
-
         pid_awal, plabel_awal = next(iter(periode.items()))
         for kunci, nilai in data.items():
             v, t, y, p = peta[kunci]

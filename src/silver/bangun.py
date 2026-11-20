@@ -28,7 +28,6 @@ PETA_RINCIAN = {
     "tidak ada": "total",
 }
 
-
 def _muat_peta_seri():
     """Membaca satuan dan jenis_periode dari docs/seri.csv hasil tugas #9."""
     if not DOCS_SERI_PATH.exists():
