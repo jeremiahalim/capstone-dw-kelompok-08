@@ -81,6 +81,10 @@ mengintegrasikan semuanya. Sesuaikan dengan parameter capstone di Workbench.
 | Integrasi dan penyimpanan | tahap 5–7: SQL, pembanding nasional, arsip WDI |
 | Validasi dan dokumentasi | tahap 8: skema validasi, data dictionary, README |
 
+## Dokumentasi Sprint 1
+
+- [Perbandingan Definisi Metadata BPS `var1980` vs WDI `SE.PRM.CMPT.ZS` (Bima Ekayasa — 124450106)](sprint/sprint-1/124450106.md)
+
 ## Lisensi
 
 Kode starter: MIT. Data: lihat `data/LISENSI.md` setelah mengunduh; basis data turunan yang
