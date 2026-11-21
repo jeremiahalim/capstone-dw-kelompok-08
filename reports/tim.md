@@ -45,8 +45,8 @@ Ringkasan seluruh masalah kualitas data yang ditemukan pada Sprint 1 (celah pane
 
 | Anggota | NIM | Komponen | Tugas Sampingan | Bagian Laporan |
 |---|---|---|---|---|
-| Jeremia Halim | 124450101 | Ekstraksi dan lineage (`src/ekstraksi/`) | Pengelola repo | Data dan lineage |
+| Jeremia Halim | 124450101 | Ekstraksi dan lineage (`src/ekstraksi/`) | Reproduksi dan demo | Data dan lineage |
 | Wielman Itolo Halawa | 124450072 | Profil dan pembersihan (`src/silver/`) | Koordinator | Masalah data (celah panel, anomali, patahan) |
-| Faiza Try Anjani | 124450075 | Transformasi dan panel (`src/silver/`) | Analis | Ringkasan, masalah data (katalog/satuan), draf `reports/tim.md` |
-| Caesar Ozora Alrando | 124450017 | Integrasi, penyimpanan, dan skala (`src/gold/`) | - | Integrasi dan rekonsiliasi |
+| Faiza Try Anjani | 124450075 | Transformasi dan panel (`src/silver/`) |  Analisis utama | Ringkasan, masalah data (katalog/satuan), draf `reports/tim.md` |
+| Caesar Ozora Alrando | 124450017 | Integrasi, penyimpanan, dan skala (`src/gold/`) | Penjaga data dan evaluasi | Integrasi dan rekonsiliasi |
 | Bima Ekayasa | 124450106 | Validasi dan dokumentasi (`src/validasi/`, `docs/`) | Integrator | Validasi, kamus data, dan reproduksibilitas |
