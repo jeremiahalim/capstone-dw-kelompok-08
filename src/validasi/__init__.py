@@ -1,4 +1,7 @@
-from src.validasi.aturan import jalankan as jalankan_aturan
+from src.validasi import aturan, kamus_data
+
 
 def jalankan(silver, gold=None):
-    return jalankan_aturan(silver)
+    hasil_aturan = aturan.jalankan(silver)
+    kamus_data.jalankan()
+    return hasil_aturan
