@@ -5,7 +5,8 @@
     "periode_beririsan": 9,
     "irisan_p1": 9,
     "irisan_p2": 0,
-    "irisan_p3": 0
+    "irisan_p3": 0,
+    "baris_sql": 5418
   },
   "seed": 0,
   "data_hash": "d737b8d5e46ff6af6aef435d8caa64672ebea188fd9cf93182a874d72a0d9491",
