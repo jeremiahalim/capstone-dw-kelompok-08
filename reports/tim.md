@@ -9,6 +9,7 @@ Kasus 08 mengintegrasikan lima seri provinsi BPS (`var304`, `var2595`, `var2600`
 ## Data dan lineage
 
 Paket data mentah terdiri atas **15 berkas** di `data/raw/MANIFEST.csv`: snapshot BPS 17 Oktober 2026 (5 JSON berhalaman, 5 CSV, 1 `manifest_asal.json`) dan snapshot WDI 20 Oktober 2026 (1 berkas data + 3 berkas metadata). Pembaca `src/ekstraksi/` membaca 14 berkas data/metadata (10.865 baris mentah) tanpa galat; 6 berkas sumber masuk ke Silver (6 nilai unik `_berkas_raw`). Setiap baris Silver menyimpan `_berkas_raw` dan `_sha256_raw` dari `src.common.manifest.sha256_raw` sehingga dapat ditelusuri ke berkas mentahnya (contoh penelusuran terdokumentasi di `docs/data-dictionary.md`).
+**Pilihan basis data dan perbandingan dengan dokumen JSON:** Lapis Bronze (`data/raw/`) tetap menyimpan respons JSON mentah sebagai dokumen karena unggul menjaga struktur bersarang WebAPI BPS/WDI dan seluruh metadata asli (`var.note`, `sourceNote`) untuk keperluan audit. Untuk lapis Silver dan Gold, tim memilih **DuckDB** (`data/gold/gudang.duckdb`, DDL di `src/gold/gudang.sql`, dimuat otomatis oleh `python pipeline.py` dan tidak di-commit karena `*.duckdb` masuk `.gitignore`) karena bersifat tanpa server (*embedded*), kolumnar/analitik (OLAP) untuk agregasi dan join panel 38 provinsi, terintegrasi langsung dengan Parquet, serta menegakkan kunci primer dan batasan `CHECK` di seluruh tabel (`seri`, `silver`, `gold_panel_provinsi`, `gold_tabel_nasional`, `gold_rekonsiliasi`).
 
 ## Masalah data dan penanganannya
 

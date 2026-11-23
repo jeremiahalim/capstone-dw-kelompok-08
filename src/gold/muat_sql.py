@@ -1,5 +1,4 @@
-# Persiapan Tahap 5 (Kartu #12): Memuat Silver ke DuckDB dengan kunci primer,
-# foreign key, dan batasan CHECK, serta menulis draf reports/basis_data.md.
+# Tahap 5 (Kartu #23): Muat Silver & Gold ke DuckDB dengan kunci primer dan cek jumlah baris.
 import sys
 from pathlib import Path
 import duckdb
@@ -10,145 +9,136 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 DB_PATH = BASE_DIR / "data" / "gold" / "gudang.duckdb"
-DDL_PATH = Path(__file__).with_name("silver.sql")
+DDL_PATH = Path(__file__).with_name("gudang.sql")
 DOCS_SERI_PATH = BASE_DIR / "docs" / "seri.csv"
 SILVER_PATH = BASE_DIR / "data" / "silver" / "silver.parquet"
+GOLD_DIR = BASE_DIR / "data" / "gold"
 REPORT_PATH = BASE_DIR / "reports" / "basis_data.md"
 
+TABEL_GOLD = [
+    ("gold_panel_provinsi", GOLD_DIR / "panel_provinsi.parquet"),
+    ("gold_tabel_nasional", GOLD_DIR / "tabel_nasional.parquet"),
+    ("gold_rekonsiliasi", GOLD_DIR / "rekonsiliasi.parquet"),
+]
+
 KOLOM_SILVER = [
-    "sumber",
-    "seri_kode",
-    "wilayah_kode",
-    "nama_wilayah",
-    "periode",
-    "jenis_periode",
-    "rincian",
-    "nilai",
-    "satuan",
-    "_berkas_raw",
-    "_sha256_raw",
+    "sumber", "seri_kode", "wilayah_kode", "nama_wilayah", "periode",
+    "jenis_periode", "rincian", "nilai", "satuan", "_berkas_raw", "_sha256_raw",
 ]
 
 
-def muat_silver():
-    if not SILVER_PATH.exists():
-        from src.silver.bangun import jalankan as bangun_silver
-
-        return bangun_silver()
-    return pd.read_parquet(SILVER_PATH)
-
-
-def muat_tabel_seri():
-    df = pd.read_csv(DOCS_SERI_PATH)
-    nama_kol = "nama_baku" if "nama_baku" in df.columns else "nama_seri"
-    sdg_kol = "kode_sdg" if "kode_sdg" in df.columns else "sdg_kode"
-    if "tingkat" in df.columns:
-        tingkat = df["tingkat"].astype(str).str.strip()
-    else:
-        tingkat = (
-            df["sumber"]
-            .astype(str)
-            .str.strip()
-            .map(lambda s: "provinsi" if s == "bps" else "nasional")
+def _muat_tabel(con, nama_tabel, df_src):
+    cur = con.cursor()
+    cur.register("_tmp_df", df_src)
+    cols = ", ".join(df_src.columns)
+    cur.execute(f"INSERT INTO {nama_tabel} ({cols}) SELECT {cols} FROM _tmp_df")
+    cur.unregister("_tmp_df")
+    n_sql = int(cur.execute(f"SELECT COUNT(*) FROM {nama_tabel}").fetchall()[0][0])
+    cur.close()
+    if n_sql != len(df_src):
+        raise ValueError(
+            f"Jumlah baris {nama_tabel} tidak cocok: SQL={n_sql}, Parquet={len(df_src)}"
         )
-    return pd.DataFrame(
-        {
-            "seri_kode": df["seri_kode"].astype(str).str.strip(),
-            "sumber": df["sumber"].astype(str).str.strip(),
-            "tingkat": tingkat,
-            "nama_baku": df[nama_kol].astype(str).str.strip(),
-            "satuan": df["satuan"].astype(str).str.strip(),
-            "sdg_kode": df[sdg_kol].fillna("—").astype(str).str.strip(),
-        }
-    )
+    return n_sql
 
-
-def tulis_laporan_basis_data(n_baris, n_seri):
-    baris_md = [
-        "# Pilihan Basis Data dan Rancangan Skema SQL Silver (Draf Laporan Tim)",
-        "",
-        "**Pilihan: DuckDB** (`data/gold/gudang.duckdb`, dibuat ulang oleh "
-        "`src/gold/muat_sql.py`; tidak di-commit karena `*.duckdb` masuk "
-        "`.gitignore`).",
-        "",
-        "## 1. Alasan Pemilihan DuckDB",
-        "- **Satu berkas tanpa server:** seluruh anggota tim dan dosen penguji "
-        "dapat menjalankan skrip pemuat langsung dari klon repositori tanpa memasang "
-        "layanan server tambahan.",
-        "- **Dirancang untuk kueri analitik (OLAP):** sangat cepat untuk "
-        "agregasi, *pivot*, dan penggabungan panel yang menjadi pekerjaan utama Gold di "
-        "Sprint 2.",
-        "- **Terintegrasi langsung dengan Parquet & Tahap 7:** dapat membaca "
-        "`data/silver/silver.parquet` secara native dan dipakai kembali untuk tolok ukur "
-        "perbandingan `pandas` vs `DuckDB` pada arsip WDI di Sprint 3.",
-        "",
-        "Alternatif yang dipertimbangkan:",
-        "- **SQLite:** paling sederhana dan tersedia di pustaka standar Python, "
-        "tetapi kalah cepat untuk kueri analitik/pivot skala besar di Tahap 7.",
-        "- **PostgreSQL:** dekat dengan lingkungan produksi, tetapi membutuhkan "
-        "instalasi dan konfigurasi server lokal di setiap laptop anggota dan penguji.",
-        "",
-        "## 2. Rancangan Skema SQL (`src/gold/silver.sql`)",
-        f"- **Tabel `seri` ({n_seri} baris):** memuat katalog seri dari "
-        "`docs/seri.csv` dengan `PRIMARY KEY (seri_kode)` dan `CHECK (tingkat IN "
-        "('provinsi', 'nasional'))`.",
-        f"- **Tabel `silver` ({n_baris:,} baris):** memuat seluruh baris "
-        "`data/silver/silver.parquet` dengan `PRIMARY KEY (sumber, seri_kode, "
-        "wilayah_kode, periode, rincian, _berkas_raw)`, `FOREIGN KEY (seri_kode) "
-        "REFERENCES seri (seri_kode)`, serta `CHECK` untuk `wilayah_kode`, "
-        "`jenis_periode`, dan panjang `_sha256_raw` (= 64).",
-        "- Basis data berperan sebagai lapis validasi terakhir: baris yang "
-        "melanggar kunci primer, rujukan seri, atau aturan `CHECK` otomatis ditolak saat "
-        "dimuat.",
-        "",
-        "## 3. Perbandingan Tabel SQL vs Menyimpan Respons JSON Mentah sebagai Dokumen",
-        "Respons JSON WebAPI BPS dan WDI berbentuk dokumen bersarang (*nested "
-        "document*): satu berkas berisi beberapa halaman tahun, daftar kamus label "
-        "(`vervar`, `turvar`, `tahun`), metadata seri (`var.note` yang memuat tag HTML), "
-        "serta objek `datacontent` dengan kunci gabungan.",
-        "- **Penyimpanan dokumen (JSON mentah di `data/raw/`):** unggul untuk "
-        "arsip lapis Bronze karena mempertahankan seluruh metadata, struktur asli, dan "
-        "sidik SHA-256 tanpa perubahan apa pun.",
-        "- **Penyimpanan relasional/tabel (Silver di DuckDB):** jauh lebih "
-        "tepat untuk analisis dan integrasi karena setiap observasi sudah terurai "
-        "menjadi kolom datar (`wilayah_kode`, `periode`, `rincian`, `nilai`, `satuan`) "
-        "yang dapat dikueri dengan SQL, digabung antarsumber, serta ditegakkan kunci "
-        "primer dan integritas referensialnya.",
-        "Tim mempertahankan keduanya sesuai fungsi lapisannya: respons JSON "
-        "mentah tetap sebagai dokumen arsip di `data/raw/` (Bronze), sedangkan data "
-        "terstruktur dimuat sebagai tabel relasional di DuckDB (Silver/Gold).",
+def _tulis_laporan(rekap):
+    baris_tbl = [
+        "| Tabel SQL | Berkas Parquet | Baris Parquet | Baris SQL | Status |",
+        "| --- | --- | ---: | ---: | --- |",
     ]
-    isi = "\n".join(baris_md) + "\n"
+    for r in rekap:
+        baris_tbl.append(
+            f"| `{r['tabel']}` | `{r['berkas']}` | {r['parquet']} | {r['sql']} | {r['status']} |"
+        )
+
+    md = [
+        "# Pilihan Basis Data & Skema SQL Silver-Gold (Kartu #23)",
+        "",
+        "**Pilihan: DuckDB** (`data/gold/gudang.duckdb`, dibuat ulang oleh `src/gold/muat_sql.py` dari `python pipeline.py`; tidak di-commit karena `*.duckdb` masuk `.gitignore`).",
+        "",
+        "## 1. Alasan Pemilihan DuckDB untuk Lapis Silver & Gold",
+        "- **Tanpa server, satu berkas:** seluruh anggota tim dan dosen penguji cukup menjalankan `python pipeline.py` tanpa memasang server PostgreSQL.",
+        "- **Mesin analitik kolumnar (OLAP):** jauh lebih cepat daripada SQLite untuk agregasi, join panel 38 provinsi, dan tolok ukur skala 142 rilis WDI di Sprint 3.",
+        "- **Menegakkan integritas skema:** DDL `src/gold/gudang.sql` menegakkan kunci primer, foreign key (`REFERENCES seri`), tipe kolom, serta batasan `CHECK`.",
+        "",
+        "## 2. Perbandingan dengan Menyimpan Respons JSON Mentah sebagai Dokumen",
+        "- **Dokumen JSON mentah (tepat untuk lapis Bronze / `data/raw/`):** unggul menjaga struktur bersarang WebAPI BPS/WDI dan seluruh metadata asli (`var.note`, `sourceNote`) secara utuh tanpa kehilangan konteks untuk audit.",
+        "- **SQL relasional kolumnar DuckDB (tepat untuk lapis Silver & Gold):** unggul untuk kueri analitik lintas seri, penegakan kunci primer agar tidak ada sel ganda, tipe numerik ketat, dan pembacaan langsung berkas Parquet.",
+        "",
+        "## 3. Verifikasi Jumlah Baris Parquet vs SQL",
+        "",
+        *baris_tbl,
+    ]
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    REPORT_PATH.write_text(isi, encoding="utf-8")
+    REPORT_PATH.write_text("\n".join(md) + "\n", encoding="utf-8")
 
 
 def jalankan():
-    silver = muat_silver()[KOLOM_SILVER].copy()
-    seri = muat_tabel_seri()
+    if not SILVER_PATH.exists():
+        from src.silver.bangun import jalankan as bangun_silver
+        bangun_silver()
+
+    df_silver = pd.read_parquet(SILVER_PATH)[KOLOM_SILVER]
+    df_seri = pd.read_csv(DOCS_SERI_PATH)
+    df_seri_sql = df_seri[
+        ["seri_kode", "sumber", "tingkat", "nama_baku", "satuan", "kode_sdg"]
+    ].rename(columns={"kode_sdg": "sdg_kode"})
+
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
-    DB_PATH.unlink(missing_ok=True)
-    with duckdb.connect(str(DB_PATH)) as con:
-        con.execute(DDL_PATH.read_text(encoding="utf-8"))
-        con.register("seri_df", seri)
-        con.execute("INSERT INTO seri SELECT * FROM seri_df")
-        con.register("silver_df", silver)
-        kolom_sql = ", ".join(KOLOM_SILVER)
-        con.execute(
-            f"INSERT INTO silver ({kolom_sql}) SELECT {kolom_sql} FROM silver_df"
-        )
-        n_seri = con.execute("SELECT count(*) FROM seri").fetchone()[0]
-        n_silver = con.execute("SELECT count(*) FROM silver").fetchone()[0]
-    if n_silver != len(silver):
-        raise AssertionError(
-            f"DuckDB memuat {n_silver} baris, sedangkan Silver {len(silver)} baris"
-        )
-    tulis_laporan_basis_data(n_silver, n_seri)
-    print(
-        f"Berhasil memuat {n_silver:,} baris Silver dan {n_seri} seri ke {DB_PATH}"
-    )
-    print(f"Laporan tersimpan: {REPORT_PATH}")
-    return n_silver
+    if DB_PATH.exists():
+        DB_PATH.unlink()
+
+    con = duckdb.connect(str(DB_PATH))
+    con.execute(DDL_PATH.read_text(encoding="utf-8"))
+
+    n_seri = _muat_tabel(con, "seri", df_seri_sql)
+    n_silver = _muat_tabel(con, "silver", df_silver)
+    rekap = [
+        {
+            "tabel": "seri",
+            "berkas": "docs/seri.csv",
+            "parquet": len(df_seri_sql),
+            "sql": n_seri,
+            "status": "COCOK",
+        },
+        {
+            "tabel": "silver",
+            "berkas": "data/silver/silver.parquet",
+            "parquet": len(df_silver),
+            "sql": n_silver,
+            "status": "COCOK",
+        },
+    ]
+
+    for nama_tabel, path_pq in TABEL_GOLD:
+        if path_pq.exists():
+            df_g = pd.read_parquet(path_pq)
+            n_g = _muat_tabel(con, nama_tabel, df_g)
+            rekap.append(
+                {
+                    "tabel": nama_tabel,
+                    "berkas": str(path_pq.relative_to(BASE_DIR)).replace("\\", "/"),
+                    "parquet": len(df_g),
+                    "sql": n_g,
+                    "status": "COCOK",
+                }
+            )
+        else:
+            rekap.append(
+                {
+                    "tabel": nama_tabel,
+                    "berkas": str(path_pq.relative_to(BASE_DIR)).replace("\\", "/"),
+                    "parquet": "-",
+                    "sql": 0,
+                    "status": "menunggu berkas",
+                }
+            )
+
+    con.close()
+    _tulis_laporan(rekap)
+    ringkas = ", ".join(f"{r['tabel']}={r['sql']}" for r in rekap)
+    print(f"muat_sql: berhasil memuat ke {DB_PATH.name} ({ringkas})")
+    return rekap
 
 
 if __name__ == "__main__":

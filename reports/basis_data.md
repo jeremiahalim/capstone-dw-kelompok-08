@@ -1,23 +1,22 @@
-# Pilihan Basis Data dan Rancangan Skema SQL Silver (Draf Laporan Tim)
+# Pilihan Basis Data & Skema SQL Silver-Gold (Kartu #23)
 
-**Pilihan: DuckDB** (`data/gold/gudang.duckdb`, dibuat ulang oleh `src/gold/muat_sql.py`; tidak di-commit karena `*.duckdb` masuk `.gitignore`).
+**Pilihan: DuckDB** (`data/gold/gudang.duckdb`, dibuat ulang oleh `src/gold/muat_sql.py` dari `python pipeline.py`; tidak di-commit karena `*.duckdb` masuk `.gitignore`).
 
-## 1. Alasan Pemilihan DuckDB
-- **Satu berkas tanpa server:** seluruh anggota tim dan dosen penguji dapat menjalankan skrip pemuat langsung dari klon repositori tanpa memasang layanan server tambahan.
-- **Dirancang untuk kueri analitik (OLAP):** sangat cepat untuk agregasi, *pivot*, dan penggabungan panel yang menjadi pekerjaan utama Gold di Sprint 2.
-- **Terintegrasi langsung dengan Parquet & Tahap 7:** dapat membaca `data/silver/silver.parquet` secara native dan dipakai kembali untuk tolok ukur perbandingan `pandas` vs `DuckDB` pada arsip WDI di Sprint 3.
+## 1. Alasan Pemilihan DuckDB untuk Lapis Silver & Gold
+- **Tanpa server, satu berkas:** seluruh anggota tim dan dosen penguji cukup menjalankan `python pipeline.py` tanpa memasang server PostgreSQL.
+- **Mesin analitik kolumnar (OLAP):** jauh lebih cepat daripada SQLite untuk agregasi, join panel 38 provinsi, dan tolok ukur skala 142 rilis WDI di Sprint 3.
+- **Menegakkan integritas skema:** DDL `src/gold/gudang.sql` menegakkan kunci primer, foreign key (`REFERENCES seri`), tipe kolom, serta batasan `CHECK`.
 
-Alternatif yang dipertimbangkan:
-- **SQLite:** paling sederhana dan tersedia di pustaka standar Python, tetapi kalah cepat untuk kueri analitik/pivot skala besar di Tahap 7.
-- **PostgreSQL:** dekat dengan lingkungan produksi, tetapi membutuhkan instalasi dan konfigurasi server lokal di setiap laptop anggota dan penguji.
+## 2. Perbandingan dengan Menyimpan Respons JSON Mentah sebagai Dokumen
+- **Dokumen JSON mentah (tepat untuk lapis Bronze / `data/raw/`):** unggul menjaga struktur bersarang WebAPI BPS/WDI dan seluruh metadata asli (`var.note`, `sourceNote`) secara utuh tanpa kehilangan konteks untuk audit.
+- **SQL relasional kolumnar DuckDB (tepat untuk lapis Silver & Gold):** unggul untuk kueri analitik lintas seri, penegakan kunci primer agar tidak ada sel ganda, tipe numerik ketat, dan pembacaan langsung berkas Parquet.
 
-## 2. Rancangan Skema SQL (`src/gold/silver.sql`)
-- **Tabel `seri` (7 baris):** memuat katalog seri dari `docs/seri.csv` dengan `PRIMARY KEY (seri_kode)` dan `CHECK (tingkat IN ('provinsi', 'nasional'))`.
-- **Tabel `silver` (5,418 baris):** memuat seluruh baris `data/silver/silver.parquet` dengan `PRIMARY KEY (sumber, seri_kode, wilayah_kode, periode, rincian, _berkas_raw)`, `FOREIGN KEY (seri_kode) REFERENCES seri (seri_kode)`, serta `CHECK` untuk `wilayah_kode`, `jenis_periode`, dan panjang `_sha256_raw` (= 64).
-- Basis data berperan sebagai lapis validasi terakhir: baris yang melanggar kunci primer, rujukan seri, atau aturan `CHECK` otomatis ditolak saat dimuat.
+## 3. Verifikasi Jumlah Baris Parquet vs SQL
 
-## 3. Perbandingan Tabel SQL vs Menyimpan Respons JSON Mentah sebagai Dokumen
-Respons JSON WebAPI BPS dan WDI berbentuk dokumen bersarang (*nested document*): satu berkas berisi beberapa halaman tahun, daftar kamus label (`vervar`, `turvar`, `tahun`), metadata seri (`var.note` yang memuat tag HTML), serta objek `datacontent` dengan kunci gabungan.
-- **Penyimpanan dokumen (JSON mentah di `data/raw/`):** unggul untuk arsip lapis Bronze karena mempertahankan seluruh metadata, struktur asli, dan sidik SHA-256 tanpa perubahan apa pun.
-- **Penyimpanan relasional/tabel (Silver di DuckDB):** jauh lebih tepat untuk analisis dan integrasi karena setiap observasi sudah terurai menjadi kolom datar (`wilayah_kode`, `periode`, `rincian`, `nilai`, `satuan`) yang dapat dikueri dengan SQL, digabung antarsumber, serta ditegakkan kunci primer dan integritas referensialnya.
-Tim mempertahankan keduanya sesuai fungsi lapisannya: respons JSON mentah tetap sebagai dokumen arsip di `data/raw/` (Bronze), sedangkan data terstruktur dimuat sebagai tabel relasional di DuckDB (Silver/Gold).
+| Tabel SQL | Berkas Parquet | Baris Parquet | Baris SQL | Status |
+| --- | --- | ---: | ---: | --- |
+| `seri` | `docs/seri.csv` | 7 | 7 | COCOK |
+| `silver` | `data/silver/silver.parquet` | 5418 | 5418 | COCOK |
+| `gold_panel_provinsi` | `data/gold/panel_provinsi.parquet` | 769 | 769 | COCOK |
+| `gold_tabel_nasional` | `data/gold/tabel_nasional.parquet` | 241 | 241 | COCOK |
+| `gold_rekonsiliasi` | `data/gold/rekonsiliasi.parquet` | 101 | 101 | COCOK |
