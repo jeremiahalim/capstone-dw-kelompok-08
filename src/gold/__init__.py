@@ -1,12 +1,18 @@
-from src.gold import aturan_seleksi, muat_sql, nasional
+from src.gold import muat_sql, nasional, panel
 
 
 def jalankan(silver):
-    sel_gold = aturan_seleksi.jalankan(silver)
+    try:
+        from src.gold import aturan_seleksi
+        aturan_seleksi.jalankan(silver)
+    except ImportError:
+        pass
+    hasil_panel = panel.jalankan(silver)
     hasil_nasional = nasional.jalankan()
     hasil_sql = muat_sql.jalankan()
     return {
-        "sel_gold": sel_gold,
+        "panel_provinsi": hasil_panel["panel_provinsi"],
+        "panel_lineage": hasil_panel["panel_lineage"],
         "nasional": hasil_nasional,
         "sql": hasil_sql,
     }
