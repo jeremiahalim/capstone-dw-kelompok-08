@@ -1,7 +1,8 @@
-from src.validasi import aturan, kamus_data
+from src.validasi import aturan, aturan_gold, kamus_data
 
 
 def jalankan(silver, gold=None):
-    hasil_aturan = aturan.jalankan(silver)
+    hasil_silver = aturan.jalankan(silver)
+    hasil_gold = aturan_gold.jalankan(silver, gold)
     kamus_data.jalankan()
-    return hasil_aturan
+    return {"silver": hasil_silver, "gold": hasil_gold}
