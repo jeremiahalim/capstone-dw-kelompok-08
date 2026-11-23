@@ -212,6 +212,8 @@ def jalankan():
     )
     from src.gold import nasional_gold
     nasional_gold.jalankan()
+    from src.gold import rekonsiliasi
+    rekonsiliasi.jalankan()
 
 if __name__ == "__main__":
     jalankan()
