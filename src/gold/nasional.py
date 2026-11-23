@@ -210,7 +210,8 @@ def jalankan():
         f"Ringkasan metrik: pasangan_rekonsiliasi={n_selisih} "
         f"pasangan_konteks={n_konteks} periode_beririsan={tot_irisan}"
     )
-
+    from src.gold import nasional_gold
+    nasional_gold.jalankan()
 
 if __name__ == "__main__":
     jalankan()
