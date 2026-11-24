@@ -23,16 +23,36 @@ def _df_ke_md(df):
     return "\n".join(lines)
 
 
-def bangun_bagian_integrasi():
-    if not REK_PATH.exists():
+def _cek_berkas_sumber():
+    wajib = [REK_PATH, PANEL_PATH, NAS_PATH, LOG_PATH]
+    hilang = [str(p.relative_to(BASE_DIR)).replace("\\", "/") for p in wajib if not p.exists()]
+    if hilang:
         raise FileNotFoundError(
-            "data/gold/rekonsiliasi.parquet belum ada. Pastikan Kartu #24 sudah dijalankan/di-merge."
+            f"Berkas sumber belum tersedia: {hilang}. Jalankan `python pipeline.py` terlebih dahulu."
         )
+
+
+def bangun_bagian_integrasi():
+    _cek_berkas_sumber()
     rek = pd.read_parquet(REK_PATH)
-    n_panel = len(pd.read_parquet(PANEL_PATH)) if PANEL_PATH.exists() else 769
-    n_nas = len(pd.read_parquet(NAS_PATH)) if NAS_PATH.exists() else 241
+    panel = pd.read_parquet(PANEL_PATH)
+    nas = pd.read_parquet(NAS_PATH)
     log_df = pd.read_csv(LOG_PATH)
-    n_log_gold = int((log_df["tahap"] == "gold").sum()) if "tahap" in log_df.columns else 4
+
+    if "tahap" not in log_df.columns or "id" not in log_df.columns:
+        raise ValueError("Kolom wajib 'id' dan 'tahap' tidak ditemukan di log-keputusan.csv.")
+    log_gold = log_df[log_df["tahap"] == "gold"]
+    if log_gold.empty:
+        raise ValueError("Entri tahap 'gold' tidak ditemukan di log-keputusan.csv.")
+
+    n_panel = len(panel)
+    n_nas = len(nas)
+    n_log_gold = len(log_gold)
+    id_log_range = f"`{log_gold.iloc[0]['id']}`-`{log_gold.iloc[-1]['id']}`"
+    hitung_asal = nas["asal_angka"].value_counts().to_dict()
+    n_bps = int(hitung_asal.get("baris_indonesia", 0))
+    n_wdi = int(hitung_asal.get("pembanding", 0))
+    n_agg = int(hitung_asal.get("agregat", 0))
 
     p1 = rek[rek["id_pasangan"] == "P1"].copy()
     p1_ok = p1[p1["selisih"].notna()].sort_values("periode")
@@ -83,9 +103,9 @@ def bangun_bagian_integrasi():
         "## Integrasi dan rekonsiliasi",
         "",
         f"Integrasi Sprint 2 menyusun panel Gold (`data/gold/panel_provinsi.parquet`, **{n_panel:,} baris** "
-        f"berdasarkan {n_log_gold} aturan tahap gold di `log-keputusan.csv` `K-014`-`K-017`), tabel nasional Gold "
-        f"(`data/gold/tabel_nasional.parquet`, **{n_nas} baris** dengan kolom `asal_angka`: 152 `baris_indonesia` + "
-        f"89 `pembanding`, 0 agregat buatan), dan tabel rekonsiliasi (`data/gold/rekonsiliasi.parquet`, "
+        f"berdasarkan {n_log_gold} aturan tahap gold di `log-keputusan.csv` {id_log_range}), tabel nasional Gold "
+        f"(`data/gold/tabel_nasional.parquet`, **{n_nas} baris** dengan kolom `asal_angka`: {n_bps} `baris_indonesia` + "
+        f"{n_wdi} `pembanding`, {n_agg} agregat buatan), dan tabel rekonsiliasi (`data/gold/rekonsiliasi.parquet`, "
         f"**{len(rek)} baris**, seluruh periode tanpa pasangan tetap ditampilkan dan selisih tidak dihapus).",
         "### Ringkasan Pasangan & Kategori Penjelasan",
         "",
@@ -112,6 +132,8 @@ def bangun_bagian_integrasi():
 
 
 def jalankan():
+    if not TIM_MD.exists():
+        raise FileNotFoundError(f"Berkas laporan belum tersedia: {TIM_MD}")
     teks_lama = TIM_MD.read_text(encoding="utf-8")
     bagian_baru = bangun_bagian_integrasi()
     pola = re.compile(
