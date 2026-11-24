@@ -32,10 +32,31 @@ Ringkasan seluruh masalah kualitas data yang ditemukan pada Sprint 1 (celah pane
 
 ## Integrasi dan rekonsiliasi
 
-- **P1 (sebanding dengan catatan):** `var1980 [jenjang=sd]` baris nasional (`9999`) vs WDI `SE.PRM.CMPT.ZS` beririsan **9 tahun** (2015-2023). Keduanya berkode SDG 4.1.2, tetapi berbeda metode (survei Susenas kohort umur 13-15 tahun dalam `persen` vs *gross intake ratio* administratif UIS dalam `persen_apk` yang dapat >100%).
-- **P2 (konteks / definisi berbeda):** `var2600` (paritas gender APK PT, 2020-2025) vs WDI `SE.ENR.PRSC.FM.ZS` (GPI gabungan SD+SMP/SMA, valid 1970-2018) memiliki **0 tahun irisan** dan berbeda jenjang.
-- **P3 (konteks, tanpa pembanding):** `var2595` (paritas kuintil APK SMA) tidak memiliki seri pembanding pada paket WDI. Analisis selisih lengkap dan revisi arsip WDI 142 rilis dikerjakan pada Sprint 2.
+Integrasi Sprint 2 menyusun panel Gold (`data/gold/panel_provinsi.parquet`, **769 baris** berdasarkan 4 aturan tahap gold di `log-keputusan.csv` `K-014`-`K-017`), tabel nasional Gold (`data/gold/tabel_nasional.parquet`, **241 baris** dengan kolom `asal_angka`: 152 `baris_indonesia` + 89 `pembanding`, 0 agregat buatan), dan tabel rekonsiliasi (`data/gold/rekonsiliasi.parquet`, **101 baris**, seluruh periode tanpa pasangan tetap ditampilkan dan selisih tidak dihapus).
+### Ringkasan Pasangan & Kategori Penjelasan
 
+| ID | Seri Utama (BPS) | Pembanding (WDI) | Total Baris | Berpasangan | Besar Selisih | Kategori |
+| --- | --- | --- | --- | --- | --- | --- |
+| P1 | var1980 [jenjang=sd] | SE.PRM.CMPT.ZS | 47 | 9 | median absolut 7.38 pp (-17.46 di 2015 -> -2.12 di 2023) | definisi |
+| P2 | var2600 (PT) | SE.ENR.PRSC.FM.ZS (SD+menengah) | 48 | 0 | - (0 tahun beririsan) | definisi |
+| P3 | var2595 (kuintil SMA) | tidak_ada | 6 | 0 | - (tanpa pembanding) | definisi |
+### Rincian Selisih Pasangan Aktif P1 (2015-2023)
+Pada seluruh **9 tahun beririsan**, WDI `SE.PRM.CMPT.ZS` selalu berada di atas BPS `var1980 [jenjang=sd]` (median selisih absolut **7.38 poin persen**, signed median `-7.38` poin persen). Selisih menyempit konsisten dari **-17.46 pp** (2015) menjadi **-2.12 pp** (2023):
+| periode | nilai_utama | nilai_pembanding | selisih | selisih_absolut | kategori_selisih |
+| --- | --- | --- | --- | --- | --- |
+| 2015 | 91.44 | 108.9 | -17.4567 | 17.4567 | definisi |
+| 2016 | 93.88 | 107.21 | -13.3334 | 13.3334 | definisi |
+| 2017 | 95.25 | 104.77 | -9.5235 | 9.5235 | definisi |
+| 2018 | 94.68 | 102.63 | -7.9475 | 7.9475 | definisi |
+| 2019 | 95.48 | 102.86 | -7.3762 | 7.3762 | definisi |
+| 2020 | 96.0 | 102.12 | -6.1197 | 6.1197 | definisi |
+| 2021 | 97.37 | 103.37 | -5.9968 | 5.9968 | definisi |
+| 2022 | 97.82 | 102.07 | -4.2481 | 4.2481 | definisi |
+| 2023 | 97.83 | 99.95 | -2.1222 | 2.1222 | definisi |
+### Penjelasan Kategori Selisih
+- **`definisi` (P1 `var1980 [jenjang=sd]` vs `SE.PRM.CMPT.ZS`):** BPS mengukur persentase penduduk kelompok umur 13-15 tahun yang telah menyelesaikan SD berbasis survei rumah tangga Susenas (`persen`, batas atas 100%), sedangkan WDI mengukur *gross intake ratio* ke kelas terakhir SD tanpa memandang umur dari data administratif UIS (`persen_apk`, dapat melebihi 100% saat banyak siswa masuk lebih awal/terlambat, terlihat pada 2015-2022). Penyempitan selisih mencerminkan berkurangnya porsi siswa di luar usia resmi kelas 6 SD.
+- **`definisi` (P2 `var2600` vs `SE.ENR.PRSC.FM.ZS`):** Dilaporkan sebagai *definisi berbeda* karena jenjang berbeda (Perguruan Tinggi pada BPS 2020-2025 vs gabungan SD+menengah pada WDI 1970-2018), skala berbeda (`rasio_x100` vs `rasio`), dan tidak ada tahun beririsan (0 tahun).
+- **`definisi` (P3 `var2595`):** Mengukur paritas kuintil pengeluaran jenjang SMA yang tidak memiliki seri pembanding kuintil pada paket WDI. Analisis revisi 142 rilis arsip WDI (`vintage`) dilanjutkan pada Sprint 3.
 ## Validasi dan reproduksibilitas
 
 - **Skema minimal Silver:** `python -m src.common.skema data/silver/silver.parquet` berakhir **LOLOS** (5,418 baris, 7 seri, 39 wilayah, 6 berkas sumber, 0 duplikat kunci).
